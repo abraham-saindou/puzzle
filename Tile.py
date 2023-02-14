@@ -1,10 +1,11 @@
-import pygame
+
 from settings import *
 
-pygame.font.init()
+
 
 class Tile(pygame.sprite.Sprite):
     def __init__(self, game, x, y, text):
+        pygame.font.init()
         self.groups = game.all_sprites
         pygame.sprite.Sprite.__init__(self, self.groups)
         self.game = game
@@ -31,13 +32,13 @@ class Tile(pygame.sprite.Sprite):
         return self.rect.left <= mouse_x <= self.rect.right and self.rect.top <= mouse_y <= self.rect.bottom
 
     def left(self):
-        return self.x - TILESIZE >= 0
+        return self.rect.x - TILESIZE >= 0
 
     def up(self):
-        return self.y - TILESIZE >= 0
+        return self.rect.y - TILESIZE >= 0
 
     def right(self):
-        return self.x + TILESIZE < GAMESIZE * TILESIZE
+        return self.rect.x + TILESIZE < GAMESIZE * TILESIZE
 
     def down(self):
-        return self.y + TILESIZE < GAMESIZE * TILESIZE
+        return self.rect.y + TILESIZE < GAMESIZE * TILESIZE
