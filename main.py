@@ -44,33 +44,30 @@ class Tile(pygame.sprite.Sprite):
         return self.rect.y + TILESIZE < GAMESIZE * TILESIZE
 
     def move_tiles(self, key):
-        if key == pygame.K_LEFT:
-            for row, tiles in enumerate(self.tiles):
-                for col, tile in enumerate(tiles):
+        for row, tiles in enumerate(self.tiles):
+            for col, tile in enumerate(tiles):
+                if key == pygame.K_LEFT:
                     if tile.right() and self.tiles_grid[row][col + 1] == 0:
                         self.tiles_grid[row][col], self.tiles_grid[row][col + 1] = self.tiles_grid[row][col + 1], \
                         self.tiles_grid[row][col]
                         return True
-        elif key == pygame.K_RIGHT:
-            for row, tiles in enumerate(self.tiles):
-                for col, tile in enumerate(tiles):
+                elif key == pygame.K_RIGHT:
                     if tile.left() and self.tiles_grid[row][col - 1] == 0:
-                        self.tiles_grid[row][col], self.tiles_grid[row][col - 1] = self.tiles_grid[row][col - 1], \
-                        self.tiles_grid[row][col]
+                        self.tiles_grid[row][col], self.tiles_grid[row][col - 1] = self.tiles_grid[row][
+                            col - 1], \
+                            self.tiles_grid[row][col]
                         return True
-        elif key == pygame.K_UP:
-            for row, tiles in enumerate(self.tiles):
-                for col, tile in enumerate(tiles):
+                elif key == pygame.K_UP:
                     if tile.down() and self.tiles_grid[row + 1][col] == 0:
-                        self.tiles_grid[row][col], self.tiles_grid[row + 1][col] = self.tiles_grid[row + 1][col], \
-                        self.tiles_grid[row][col]
+                        self.tiles_grid[row][col], self.tiles_grid[row + 1][col] = self.tiles_grid[row + 1][
+                            col], \
+                            self.tiles_grid[row][col]
                         return True
-        elif key == pygame.K_DOWN:
-            for row, tiles in enumerate(self.tiles):
-                for col, tile in enumerate(tiles):
+                elif key == pygame.K_DOWN:
                     if tile.up() and self.tiles_grid[row - 1][col] == 0:
-                        self.tiles_grid[row][col], self.tiles_grid[row - 1][col] = self.tiles_grid[row - 1][col], \
-                        self.tiles_grid[row][col]
+                        self.tiles_grid[row][col], self.tiles_grid[row - 1][col] = self.tiles_grid[row - 1][
+                            col], \
+                            self.tiles_grid[row][col]
                         return True
         return False
 
@@ -110,18 +107,30 @@ class Button:
 class PuzzleGame(Tile, UIElement, Button):
     def __init__(self):
         pygame.init()
+
         self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
         pygame.display.set_caption(title)
         self.clock = pygame.time.Clock()
-        self.shuffling_timer = 0
+        self.randomizer_timer = 0
         self.start_randomize = False
+        self.start_game = False
+        self.changeboard_size = False
+        self.file = open('userscore.txt', 'a+')
+
         self.prechoice = ""
         self.button_list = []
-        self.user_score = 0
-        self.list_userscore = []
+        self.size = ["3*3", "4*4", "5*5"]
+
+        self.moved = False
+        self.movement_count = 0
 
     def init_game(self):
-        grid = [[x + y * GAMESIZE for x in range(1, GAMESIZE + 1)] for y in range(GAMESIZE)]
+        grid, num = [], 1
+        for x in range(GAMESIZE):
+            grid.append([])
+            for y in range(GAMESIZE):
+                grid[x].append(num)
+                num += 1
         grid[-1][-1] = 0
         return grid
 
@@ -183,8 +192,12 @@ class PuzzleGame(Tile, UIElement, Button):
         self.tiles_grid = self.init_game()
         self.tiles_grid_complet = self.init_game()
 
-        self.button_list.append(Button(775, 100, 200, 50, "Randomize", WHITE, BLACK))
-        self.button_list.append(Button(775, 170, 200, 50, "Reset", WHITE, BLACK))
+        self.start_game = False
+        self.button_list.append(Button(775, 100, 190, 50, "Randomize", WHITE, BLACK))
+        self.button_list.append(Button(775, 170, 190, 50, "Reset", WHITE, BLACK))
+        self.button_list.append(Button(760, 240, 60, 50, "3*3", WHITE, BLACK))
+        self.button_list.append(Button(840, 240, 60, 50, "4*4", WHITE, BLACK))
+        self.button_list.append(Button(920, 240, 60, 50, "5*5", WHITE, BLACK))
         self.draw_tiles()
 
     def run(self):
@@ -200,35 +213,58 @@ class PuzzleGame(Tile, UIElement, Button):
         for col in range(-1, GAMESIZE * TILESIZE, TILESIZE):
             pygame.draw.line(self.screen, LIGHTGREY, (0, col), (GAMESIZE * TILESIZE, col))
 
-    def draw(self):
+    def layout(self):
         self.screen.fill(BGCOLOR)
         self.all_sprites.update()
         self.all_sprites.draw(self.screen)
         self.draw_grid()
         for button in self.button_list:
             button.draw(self.screen)
+            self.str_movement_count = str(self.movement_count)
+            UIElement(825, 35, self.str_movement_count + " moves").draw(self.screen)
+            score = self.file.read()
+            print(score)
+            UIElement(710, 380, ("Best Score : " + score)).draw(self.screen)
+
+    def draw(self):
+        self.layout()
+        if self.changeboard_size is True:
+            self.new()
+            print(self.tiles_grid)
+            print(self.tiles)
+            self.changeboard_size = False
+            self.str_movement_count = ""
+            self.start_game = True
+
+        if self.start_game:
+            if self.tiles_grid == self.tiles_grid_complet:
+                self.start_game = False
+                self.file.write("{}\n".format(self.str_movement_count + " moves"))
+
+                print("You won by using " + self.str_movement_count + " moves")
+
         if self.start_randomize:
             self.randomizer()
             self.draw_tiles()
-            self.shuffling_timer += 1
-            if self.shuffling_timer > 80:
+            self.randomizer_timer += 1
+            if self.randomizer_timer > 80:
                 self.start_randomize = False
-
-
+                self.start_game = True
+                self.movement_count = 0
         pygame.display.flip()
 
     def events(self):
+        global GAMESIZE
         for event in pygame.event.get():
-            if event.type == pygame.QUIT:
+            if event.type == pygame.QUIT:  # Allows user to quit game
                 pygame.quit()
                 quit(0)
-
-            if event.type == pygame.KEYDOWN:
+            if event.type == pygame.KEYDOWN:  # User press a key arrow and empty tile is moved, by using move_tiles()
                 if event.key in [pygame.K_LEFT, pygame.K_RIGHT, pygame.K_UP, pygame.K_DOWN]:
-                    moved = self.move_tiles(event.key)
-                    if moved:
+                    self.moved = self.move_tiles(event.key)
+                    if self.moved:
                         self.draw_tiles()
-
+                        self.movement_count += 1
             if event.type == pygame.MOUSEBUTTONDOWN:
                 mouse_x, mouse_y = pygame.mouse.get_pos()
                 for row, tiles in enumerate(self.tiles):
@@ -237,26 +273,36 @@ class PuzzleGame(Tile, UIElement, Button):
                             if tile.right() and self.tiles_grid[row][col + 1] == 0:
                                 self.tiles_grid[row][col], self.tiles_grid[row][col + 1] = self.tiles_grid[row][
                                     col + 1], self.tiles_grid[row][col]
+                                self.movement_count += 1
                             if tile.left() and self.tiles_grid[row][col - 1] == 0:
                                 self.tiles_grid[row][col], self.tiles_grid[row][col - 1] = self.tiles_grid[row][
                                     col - 1], self.tiles_grid[row][col]
-
+                                self.movement_count += 1
                             if tile.up() and self.tiles_grid[row - 1][col] == 0:
                                 self.tiles_grid[row][col], self.tiles_grid[row - 1][col] = self.tiles_grid[row - 1][
                                     col], self.tiles_grid[row][col]
-
+                                self.movement_count += 1
                             if tile.down() and self.tiles_grid[row + 1][col] == 0:
                                 self.tiles_grid[row][col], self.tiles_grid[row + 1][col] = self.tiles_grid[row + 1][
                                     col], self.tiles_grid[row][col]
-
+                                self.movement_count += 1
                     self.draw_tiles()
                 for button in self.button_list:
                     if button.click(mouse_x, mouse_y):
                         if button.text == "Randomize":
-                            self.shuffling_timer = 0
+                            self.randomizer_timer = 0
                             self.start_randomize = True
                         if button.text == "Reset":
                             self.new()
+                        if button.text == self.size[0]:
+                            GAMESIZE = 3
+                            self.changeboard_size = True
+                        if button.text == self.size[1]:
+                            GAMESIZE = 4
+                            self.changeboard_size = True
+                        if button.text == self.size[2]:
+                            GAMESIZE = 5
+                            self.changeboard_size = True
 
 
 game = PuzzleGame()
