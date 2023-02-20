@@ -1,14 +1,15 @@
 # Colors
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
-DARKGREY = (40, 40, 40)
+BEIGE = (250, 215, 160)
+DARKGREY = (179, 182, 183)
 LIGHTGREY = (100, 100, 100)
-
+MAGENTA = (255, 0, 255)
 BGCOLOR = DARKGREY
-
-WIDTH = 1200
-HEIGHT = 600
+# Puzzle Settings
+WIDTH, HEIGHT = 1000, 480
 FPS = 60
 title = "Slide Puzzle"
+# Board size
 TILESIZE = 96
 GAMESIZE = 3
